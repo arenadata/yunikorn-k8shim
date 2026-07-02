@@ -66,7 +66,7 @@ const SparkLabelAppID = "spark-app-selector"
 // Configuration
 const ConfigMapName = "yunikorn-configs"
 const DefaultConfigMapName = "yunikorn-defaults"
-const SchedulerName = "yunikorn"
+const SchedulerName = "ad-yunikorn"
 
 // OwnerReferences
 const DaemonSetType = "DaemonSet"
