@@ -29,6 +29,8 @@ import (
 	"github.com/apache/yunikorn-k8shim/pkg/common/constants"
 	"github.com/apache/yunikorn-k8shim/pkg/plugin/predicates"
 
+	corelog "github.com/apache/yunikorn-core/pkg/log"
+
 	"github.com/apache/yunikorn-core/pkg/entrypoint"
 	"github.com/apache/yunikorn-k8shim/pkg/conf"
 	"github.com/apache/yunikorn-k8shim/pkg/log"
@@ -51,7 +53,24 @@ func main() {
 	}
 
 	log.Log(log.Shim).Info("Starting scheduler", zap.String("name", constants.SchedulerName))
-	serviceContext := entrypoint.StartAllServicesWithLogger(log.RootLogger(), log.GetZapConfigs())
+
+	var serviceContext *entrypoint.ServiceContext
+	if conf.GetSchedulerConf().ExposeMetricsOnly {
+		// Security mode: start core services with the full web app DISABLED. The core
+		// web app would expose the entire REST/UI/debug API (clusters, config, pprof,
+		// state dump, event streams, ...) on :9080. Instead the shim serves ONLY the
+		// metrics endpoint (see KubernetesShim.metricsServer); every other endpoint
+		// ceases to exist. We initialize the core logger explicitly because, unlike
+		// StartAllServicesWithLogger, StartAllServicesWithParams does not do it.
+		log.Log(log.Shim).Warn("exposeMetricsOnly enabled: serving only /ws/v1/metrics on :9080; " +
+			"all other REST endpoints are disabled, including /ws/v1/validate-conf - if the admission " +
+			"controller is deployed with config validation, it will fail open (admit configmaps unvalidated)")
+		corelog.InitializeLogger(log.RootLogger(), log.GetZapConfigs())
+		serviceContext = entrypoint.StartAllServicesWithParams(false, false)
+	} else {
+		// Default: start all core services including the full web app on :9080.
+		serviceContext = entrypoint.StartAllServicesWithLogger(log.RootLogger(), log.GetZapConfigs())
+	}
 
 	if serviceContext.RMProxy != nil {
 		ss := shim.NewShimScheduler(serviceContext.RMProxy, conf.GetSchedulerConf(), configMaps)

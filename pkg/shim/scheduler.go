@@ -51,6 +51,7 @@ type KubernetesShim struct {
 	stopChan             chan struct{}
 	lock                 *locking.RWMutex
 	outstandingAppsFound bool
+	metricsServer        *metricsServer
 }
 
 const (
@@ -88,7 +89,12 @@ func NewShimScheduler(scheduler api.SchedulerAPI, configs *conf.SchedulerConf, b
 		events.SetRecorder(eventRecorder)
 	}
 
-	return newShimSchedulerInternal(context, apiFactory, rmCallback)
+	ss := newShimSchedulerInternal(context, apiFactory, rmCallback)
+	if configs.ExposeMetricsOnly {
+		// core's web app is disabled in this mode; serve only the metrics endpoint
+		ss.metricsServer = newMetricsServer(metricsPort)
+	}
+	return ss
 }
 
 // this is visible for testing
@@ -199,6 +205,11 @@ func (ss *KubernetesShim) Run() error {
 	// run the client library code that communicates with Kubernetes
 	ss.apiFactory.Start()
 
+	// start the metrics-only web server (only set when exposeMetricsOnly is enabled)
+	if ss.metricsServer != nil {
+		ss.metricsServer.start()
+	}
+
 	// register shim with core
 	if err := ss.registerShimLayer(); err != nil {
 		log.Log(log.ShimScheduler).Error("failed to register shim with core", zap.Error(err))
@@ -227,6 +238,10 @@ func (ss *KubernetesShim) Stop() {
 		dispatcher.Stop()
 		// stop the placeholder manager
 		ss.phManager.Stop()
+		// stop the metrics-only web server if it is running
+		if ss.metricsServer != nil {
+			ss.metricsServer.stop()
+		}
 	default:
 		log.Log(log.ShimScheduler).Info("scheduler is already stopped")
 	}
