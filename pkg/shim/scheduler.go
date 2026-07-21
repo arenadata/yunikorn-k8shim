@@ -92,7 +92,8 @@ func NewShimScheduler(scheduler api.SchedulerAPI, configs *conf.SchedulerConf, b
 	ss := newShimSchedulerInternal(context, apiFactory, rmCallback)
 	if configs.ExposeMetricsOnly {
 		// core's web app is disabled in this mode; serve only the metrics endpoint
-		ss.metricsServer = newMetricsServer(metricsPort)
+		ss.metricsServer = newMetricsServer(metricsPort, configs.MetricsTLSEnabled,
+			configs.MetricsTLSCertFile, configs.MetricsTLSKeyFile)
 	}
 	return ss
 }

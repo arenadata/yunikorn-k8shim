@@ -67,6 +67,9 @@ const (
 	CMSvcDisableGangScheduling        = PrefixService + "disableGangScheduling"
 	CMSvcEnableConfigHotRefresh       = PrefixService + "enableConfigHotRefresh"
 	CMSvcExposeMetricsOnly            = PrefixService + "exposeMetricsOnly"
+	CMSvcMetricsTLSEnabled            = PrefixService + "metricsTlsEnabled"
+	CMSvcMetricsTLSCertFile           = PrefixService + "metricsTlsCertFile"
+	CMSvcMetricsTLSKeyFile            = PrefixService + "metricsTlsKeyFile"
 	CMSvcPlaceholderImage             = PrefixService + "placeholderImage"
 	CMSvcPlaceholderRunAsUser         = PrefixService + "placeholderRunAsUser"
 	CMSvcPlaceholderRunAsGroup        = PrefixService + "placeholderRunAsGroup"
@@ -93,6 +96,7 @@ const (
 	DefaultDisableGangScheduling           = false
 	DefaultEnableConfigHotRefresh          = true
 	DefaultExposeMetricsOnly               = false
+	DefaultMetricsTLSEnabled               = false
 	DefaultKubeQPS                         = 1000
 	DefaultKubeBurst                       = 1000
 	DefaultAMFilteringGenerateUniqueAppIds = false
@@ -128,6 +132,9 @@ type SchedulerConf struct {
 	EnableConfigHotRefresh   bool               `json:"enableConfigHotRefresh"`
 	DisableGangScheduling    bool               `json:"disableGangScheduling"`
 	ExposeMetricsOnly        bool               `json:"exposeMetricsOnly"`
+	MetricsTLSEnabled        bool               `json:"metricsTlsEnabled"`
+	MetricsTLSCertFile       string             `json:"metricsTlsCertFile"`
+	MetricsTLSKeyFile        string             `json:"metricsTlsKeyFile"`
 	UserLabelKey             string             `json:"userLabelKey"`
 	PlaceHolderConfig        *PlaceHolderConfig `json:"placeHolderConfig"`
 	InstanceTypeNodeLabelKey string             `json:"instanceTypeNodeLabelKey"`
@@ -163,6 +170,9 @@ func (conf *SchedulerConf) Clone() *SchedulerConf {
 		EnableConfigHotRefresh:   conf.EnableConfigHotRefresh,
 		DisableGangScheduling:    conf.DisableGangScheduling,
 		ExposeMetricsOnly:        conf.ExposeMetricsOnly,
+		MetricsTLSEnabled:        conf.MetricsTLSEnabled,
+		MetricsTLSCertFile:       conf.MetricsTLSCertFile,
+		MetricsTLSKeyFile:        conf.MetricsTLSKeyFile,
 		UserLabelKey:             conf.UserLabelKey,
 		PlaceHolderConfig:        conf.PlaceHolderConfig,
 		InstanceTypeNodeLabelKey: conf.InstanceTypeNodeLabelKey,
@@ -223,6 +233,9 @@ func handleNonReloadableConfig(old *SchedulerConf, new *SchedulerConf) {
 	checkNonReloadableInt(CMKubeBurst, &old.KubeBurst, &new.KubeBurst)
 	checkNonReloadableBool(CMSvcDisableGangScheduling, &old.DisableGangScheduling, &new.DisableGangScheduling)
 	checkNonReloadableBool(CMSvcExposeMetricsOnly, &old.ExposeMetricsOnly, &new.ExposeMetricsOnly)
+	checkNonReloadableBool(CMSvcMetricsTLSEnabled, &old.MetricsTLSEnabled, &new.MetricsTLSEnabled)
+	checkNonReloadableString(CMSvcMetricsTLSCertFile, &old.MetricsTLSCertFile, &new.MetricsTLSCertFile)
+	checkNonReloadableString(CMSvcMetricsTLSKeyFile, &old.MetricsTLSKeyFile, &new.MetricsTLSKeyFile)
 	checkNonReloadableString(CMSvcNodeInstanceTypeNodeLabelKey, &old.InstanceTypeNodeLabelKey, &new.InstanceTypeNodeLabelKey)
 	checkNonReloadableBool(AMFilteringGenerateUniqueAppIds, &old.GenerateUniqueAppIds, &new.GenerateUniqueAppIds)
 	checkNonReloadableInt64(CMSvcPlaceholderRunAsUser, &old.PlaceHolderConfig.RunAsUser, &new.PlaceHolderConfig.RunAsUser)
@@ -338,6 +351,7 @@ func CreateDefaultConfig() *SchedulerConf {
 		EnableConfigHotRefresh:   DefaultEnableConfigHotRefresh,
 		DisableGangScheduling:    DefaultDisableGangScheduling,
 		ExposeMetricsOnly:        DefaultExposeMetricsOnly,
+		MetricsTLSEnabled:        DefaultMetricsTLSEnabled,
 		UserLabelKey:             constants.DefaultUserLabel,
 		InstanceTypeNodeLabelKey: constants.DefaultNodeInstanceTypeNodeLabelKey,
 		GenerateUniqueAppIds:     DefaultAMFilteringGenerateUniqueAppIds,
@@ -367,6 +381,9 @@ func parseConfig(config map[string]string, prev *SchedulerConf) (*SchedulerConf,
 	parser.boolVar(&conf.DisableGangScheduling, CMSvcDisableGangScheduling)
 	parser.boolVar(&conf.EnableConfigHotRefresh, CMSvcEnableConfigHotRefresh)
 	parser.boolVar(&conf.ExposeMetricsOnly, CMSvcExposeMetricsOnly)
+	parser.boolVar(&conf.MetricsTLSEnabled, CMSvcMetricsTLSEnabled)
+	parser.stringVar(&conf.MetricsTLSCertFile, CMSvcMetricsTLSCertFile)
+	parser.stringVar(&conf.MetricsTLSKeyFile, CMSvcMetricsTLSKeyFile)
 	parser.stringVar(&conf.PlaceHolderConfig.Image, CMSvcPlaceholderImage)
 	parser.int64Var(&conf.PlaceHolderConfig.RunAsUser, CMSvcPlaceholderRunAsUser)
 	parser.int64Var(&conf.PlaceHolderConfig.RunAsGroup, CMSvcPlaceholderRunAsGroup)
@@ -380,6 +397,13 @@ func parseConfig(config map[string]string, prev *SchedulerConf) (*SchedulerConf,
 
 	// admission controller
 	parser.boolVar(&conf.GenerateUniqueAppIds, AMFilteringGenerateUniqueAppIds)
+
+	// metrics endpoint TLS needs both a cert and a key; enabling it without them would
+	// otherwise silently fall back to plaintext, so reject the config instead.
+	if conf.MetricsTLSEnabled && (conf.MetricsTLSCertFile == "" || conf.MetricsTLSKeyFile == "") {
+		parser.errors = append(parser.errors, fmt.Errorf("%s is true but %s and/or %s is not set",
+			CMSvcMetricsTLSEnabled, CMSvcMetricsTLSCertFile, CMSvcMetricsTLSKeyFile))
+	}
 
 	if len(parser.errors) > 0 {
 		return nil, parser.errors
