@@ -66,6 +66,7 @@ const (
 	CMSvcDispatchTimeout              = PrefixService + "dispatchTimeout"
 	CMSvcDisableGangScheduling        = PrefixService + "disableGangScheduling"
 	CMSvcEnableConfigHotRefresh       = PrefixService + "enableConfigHotRefresh"
+	CMSvcExposeMetricsOnly            = PrefixService + "exposeMetricsOnly"
 	CMSvcPlaceholderImage             = PrefixService + "placeholderImage"
 	CMSvcPlaceholderRunAsUser         = PrefixService + "placeholderRunAsUser"
 	CMSvcPlaceholderRunAsGroup        = PrefixService + "placeholderRunAsGroup"
@@ -91,6 +92,7 @@ const (
 	DefaultOperatorPlugins                 = "general"
 	DefaultDisableGangScheduling           = false
 	DefaultEnableConfigHotRefresh          = true
+	DefaultExposeMetricsOnly               = false
 	DefaultKubeQPS                         = 1000
 	DefaultKubeBurst                       = 1000
 	DefaultAMFilteringGenerateUniqueAppIds = false
@@ -125,6 +127,7 @@ type SchedulerConf struct {
 	KubeBurst                int                `json:"kubeBurst"`
 	EnableConfigHotRefresh   bool               `json:"enableConfigHotRefresh"`
 	DisableGangScheduling    bool               `json:"disableGangScheduling"`
+	ExposeMetricsOnly        bool               `json:"exposeMetricsOnly"`
 	UserLabelKey             string             `json:"userLabelKey"`
 	PlaceHolderConfig        *PlaceHolderConfig `json:"placeHolderConfig"`
 	InstanceTypeNodeLabelKey string             `json:"instanceTypeNodeLabelKey"`
@@ -159,6 +162,7 @@ func (conf *SchedulerConf) Clone() *SchedulerConf {
 		KubeBurst:                conf.KubeBurst,
 		EnableConfigHotRefresh:   conf.EnableConfigHotRefresh,
 		DisableGangScheduling:    conf.DisableGangScheduling,
+		ExposeMetricsOnly:        conf.ExposeMetricsOnly,
 		UserLabelKey:             conf.UserLabelKey,
 		PlaceHolderConfig:        conf.PlaceHolderConfig,
 		InstanceTypeNodeLabelKey: conf.InstanceTypeNodeLabelKey,
@@ -218,6 +222,7 @@ func handleNonReloadableConfig(old *SchedulerConf, new *SchedulerConf) {
 	checkNonReloadableInt(CMKubeQPS, &old.KubeQPS, &new.KubeQPS)
 	checkNonReloadableInt(CMKubeBurst, &old.KubeBurst, &new.KubeBurst)
 	checkNonReloadableBool(CMSvcDisableGangScheduling, &old.DisableGangScheduling, &new.DisableGangScheduling)
+	checkNonReloadableBool(CMSvcExposeMetricsOnly, &old.ExposeMetricsOnly, &new.ExposeMetricsOnly)
 	checkNonReloadableString(CMSvcNodeInstanceTypeNodeLabelKey, &old.InstanceTypeNodeLabelKey, &new.InstanceTypeNodeLabelKey)
 	checkNonReloadableBool(AMFilteringGenerateUniqueAppIds, &old.GenerateUniqueAppIds, &new.GenerateUniqueAppIds)
 	checkNonReloadableInt64(CMSvcPlaceholderRunAsUser, &old.PlaceHolderConfig.RunAsUser, &new.PlaceHolderConfig.RunAsUser)
@@ -332,6 +337,7 @@ func CreateDefaultConfig() *SchedulerConf {
 		KubeBurst:                DefaultKubeBurst,
 		EnableConfigHotRefresh:   DefaultEnableConfigHotRefresh,
 		DisableGangScheduling:    DefaultDisableGangScheduling,
+		ExposeMetricsOnly:        DefaultExposeMetricsOnly,
 		UserLabelKey:             constants.DefaultUserLabel,
 		InstanceTypeNodeLabelKey: constants.DefaultNodeInstanceTypeNodeLabelKey,
 		GenerateUniqueAppIds:     DefaultAMFilteringGenerateUniqueAppIds,
@@ -360,6 +366,7 @@ func parseConfig(config map[string]string, prev *SchedulerConf) (*SchedulerConf,
 	parser.durationVar(&conf.DispatchTimeout, CMSvcDispatchTimeout)
 	parser.boolVar(&conf.DisableGangScheduling, CMSvcDisableGangScheduling)
 	parser.boolVar(&conf.EnableConfigHotRefresh, CMSvcEnableConfigHotRefresh)
+	parser.boolVar(&conf.ExposeMetricsOnly, CMSvcExposeMetricsOnly)
 	parser.stringVar(&conf.PlaceHolderConfig.Image, CMSvcPlaceholderImage)
 	parser.int64Var(&conf.PlaceHolderConfig.RunAsUser, CMSvcPlaceholderRunAsUser)
 	parser.int64Var(&conf.PlaceHolderConfig.RunAsGroup, CMSvcPlaceholderRunAsGroup)
