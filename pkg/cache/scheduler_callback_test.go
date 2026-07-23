@@ -568,7 +568,7 @@ func initCallbackTest(t *testing.T, podAssigned, placeholder bool) (*AsyncRMCall
 				constants.AnnotationApplicationID: appID,
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 	if podAssigned {
 		pod.Spec.NodeName = fakeNodeName

@@ -450,7 +450,7 @@ func TestMutate(t *testing.T) {
 	req.Object = runtime.RawExtension{Raw: podJSON}
 	resp = ac.mutate(req)
 	assert.Check(t, resp.Allowed, "response not allowed for pod")
-	assert.Equal(t, schedulerName(t, resp.Patch), "yunikorn", "yunikorn not set as scheduler for pod")
+	assert.Equal(t, schedulerName(t, resp.Patch), constants.SchedulerName, "yunikorn not set as scheduler for pod")
 	assert.Equal(t, labels(t, resp.Patch)[constants.LabelApplicationID], "yunikorn-default-autogen", "wrong applicationId label")
 	assert.Equal(t, labels(t, resp.Patch)[constants.LabelQueueName], nil, "incorrect queue name")
 
@@ -468,7 +468,7 @@ func TestMutate(t *testing.T) {
 	req.Object = runtime.RawExtension{Raw: podJSON}
 	resp = ac.mutate(req)
 	assert.Check(t, resp.Allowed, "response not allowed for pod")
-	assert.Equal(t, schedulerName(t, resp.Patch), "yunikorn", "yunikorn not set as scheduler for pod")
+	assert.Equal(t, schedulerName(t, resp.Patch), constants.SchedulerName, "yunikorn not set as scheduler for pod")
 	assert.Equal(t, labels(t, resp.Patch)[constants.LabelApplicationID], "yunikorn-test-ns-autogen", "wrong applicationId label")
 
 	// pod with applicationId
@@ -478,7 +478,7 @@ func TestMutate(t *testing.T) {
 	req.Object = runtime.RawExtension{Raw: podJSON}
 	resp = ac.mutate(req)
 	assert.Check(t, resp.Allowed, "response not allowed for pod")
-	assert.Equal(t, schedulerName(t, resp.Patch), "yunikorn", "yunikorn not set as scheduler for pod")
+	assert.Equal(t, schedulerName(t, resp.Patch), constants.SchedulerName, "yunikorn not set as scheduler for pod")
 	assert.Equal(t, labels(t, resp.Patch)[constants.LabelApplicationID], "test-app", "wrong applicationId label")
 
 	// pod in bypassed namespace
@@ -511,7 +511,7 @@ func TestMutate(t *testing.T) {
 	req.Object = runtime.RawExtension{Raw: podJSON}
 	resp = ac.mutate(req)
 	assert.Check(t, resp.Allowed, "response not allowed for nolabel pod")
-	assert.Equal(t, schedulerName(t, resp.Patch), "yunikorn", "yunikorn not set as scheduler for nolabel pod")
+	assert.Equal(t, schedulerName(t, resp.Patch), constants.SchedulerName, "yunikorn not set as scheduler for nolabel pod")
 	assert.Equal(t, len(labels(t, resp.Patch)), 0, "non-empty labels for nolabel pod")
 
 	// unknown object type

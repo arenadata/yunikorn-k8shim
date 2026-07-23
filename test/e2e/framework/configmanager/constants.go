@@ -18,6 +18,8 @@
 
 package configmanager
 
+import "github.com/apache/yunikorn-k8shim/pkg/common/constants"
+
 const (
 	TestResultsPath = "test_results/"
 
@@ -26,7 +28,7 @@ const (
 
 	YKScheduler          = "yunikorn-scheduler"
 	YKSchedulerContainer = "yunikorn-scheduler-k8s"
-	SchedulerName        = "yunikorn"
+	SchedulerName        = constants.SchedulerName
 	YKAdmCtrl            = "yunikorn-admission-controller"
 	YKSvcName            = "yunikorn-service" // YuniKorn service name
 	YKDeploymentName     = "yunikorn-scheduler"

@@ -460,7 +460,7 @@ func TestAddPod(t *testing.T) {
 				constants.AnnotationApplicationID: appID1,
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 	pod2 := &v1.Pod{
 		TypeMeta: apis.TypeMeta{
@@ -474,7 +474,7 @@ func TestAddPod(t *testing.T) {
 				constants.AnnotationApplicationID: appID2,
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 		Status: v1.PodStatus{
 			Phase: v1.PodSucceeded,
 		},
@@ -530,7 +530,7 @@ func TestUpdatePod(t *testing.T) {
 				"test.state":                      "new",
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 	pod2 := &v1.Pod{
 		TypeMeta: apis.TypeMeta{
@@ -545,7 +545,7 @@ func TestUpdatePod(t *testing.T) {
 				"test.state":                      "updated",
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 	pod3 := &v1.Pod{
 		TypeMeta: apis.TypeMeta{
@@ -560,7 +560,7 @@ func TestUpdatePod(t *testing.T) {
 				"test.state":                      "updated",
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 		Status: v1.PodStatus{
 			Phase: v1.PodSucceeded,
 		},
@@ -614,7 +614,7 @@ func TestUpdateSchedulingGates(t *testing.T) {
 			},
 		},
 		Spec: v1.PodSpec{
-			SchedulerName: "yunikorn",
+			SchedulerName: constants.SchedulerName,
 			SchedulingGates: []v1.PodSchedulingGate{
 				{Name: "gate1"},
 				{Name: "gate2"},
@@ -678,7 +678,7 @@ func TestDeletePod(t *testing.T) {
 				constants.AnnotationApplicationID: appID1,
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 	pod2 := &v1.Pod{
 		TypeMeta: apis.TypeMeta{
@@ -692,7 +692,7 @@ func TestDeletePod(t *testing.T) {
 				constants.AnnotationApplicationID: appID2,
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 
 	context.AddPod(pod1)
@@ -1684,7 +1684,7 @@ func TestGetStateDump(t *testing.T) {
 				constants.AnnotationApplicationID: appID1,
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 	context.AddPod(pod1)
 
@@ -2357,7 +2357,7 @@ func TestOriginatorPodAfterRestart(t *testing.T) {
 				"queue":         queueNameA,
 			},
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 
 	// Placeholder pod 1
@@ -2378,7 +2378,7 @@ func TestOriginatorPodAfterRestart(t *testing.T) {
 			},
 			OwnerReferences: ownerRefs, // Add owner references because every ph reuse the app placeholder owner references.
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 
 	// Placeholder pod 1
@@ -2399,7 +2399,7 @@ func TestOriginatorPodAfterRestart(t *testing.T) {
 			},
 			OwnerReferences: ownerRefs, // Add owner references because every ph reuse the app placeholder owner references.
 		},
-		Spec: v1.PodSpec{SchedulerName: "yunikorn"},
+		Spec: v1.PodSpec{SchedulerName: constants.SchedulerName},
 	}
 
 	// Add the ph pods first and then real driver pod at the last
