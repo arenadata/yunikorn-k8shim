@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 'ad/scheduler-*'
 
 jobs:
   unit-tests:

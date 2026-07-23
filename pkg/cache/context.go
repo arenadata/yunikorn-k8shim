@@ -301,15 +301,25 @@ func (ctx *Context) UpdatePod(oldObj, newObj interface{}) {
 	defer ctx.lock.Unlock()
 	pod, err := utils.Convert2Pod(newObj)
 	if err != nil {
-		log.Log(log.ShimContext).Error("failed to update pod", zap.Error(err))
+		log.Log(log.ShimContext).Error("failed to convert 'new' pod for pod create/update", zap.Error(err))
 		return
 	}
+	// Check if this update really is a creation by checking if we know about this pod via the
+	// UID in the cache. A create followed by an update could be communicated as a single update
+	// event via the informer.
 	var oldPod *v1.Pod
+	// filter out the real create calls: nil oldObj
 	if oldObj != nil {
 		oldPod, err = utils.Convert2Pod(oldObj)
 		if err != nil {
-			log.Log(log.ShimContext).Error("failed to update pod", zap.Error(err))
+			log.Log(log.ShimContext).Error("failed to convert 'old' pod for pod update", zap.Error(err))
 			return
+		}
+		// a create as an update: pod does not exist in the cache, do not use the oldPod
+		// real update has a pod in the cache already
+		cachePod := ctx.schedulerCache.GetPod(string(pod.UID))
+		if cachePod == nil {
+			oldPod = nil
 		}
 	}
 	applicationID := utils.GetApplicationIDFromPod(pod)
@@ -969,6 +979,7 @@ func (ctx *Context) addApplication(request *AddApplicationRequest) *Application 
 		request.Metadata.Groups,
 		request.Metadata.Tags,
 		ctx.apiProvider.GetAPIs().SchedulerAPI)
+	app.setContext(ctx)
 	app.setTaskGroups(request.Metadata.TaskGroups)
 	app.setTaskGroupsDefinition(request.Metadata.Tags[constants.AnnotationTaskGroups])
 	app.setSchedulingParamsDefinition(request.Metadata.Tags[constants.AnnotationSchedulingPolicyParam])
@@ -1018,6 +1029,10 @@ func (ctx *Context) getApplication(appID string) *Application {
 func (ctx *Context) RemoveApplication(appID string) {
 	ctx.lock.Lock()
 	defer ctx.lock.Unlock()
+	ctx.removeApplication(appID)
+}
+
+func (ctx *Context) removeApplication(appID string) {
 	if _, exist := ctx.applications[appID]; !exist {
 		log.Log(log.ShimContext).Debug("Attempted to remove non-existent application", zap.String("appID", appID))
 		return

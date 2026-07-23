@@ -27,6 +27,7 @@ import (
 
 	"github.com/apache/yunikorn-core/pkg/webservice/dao"
 	tests "github.com/apache/yunikorn-k8shim/test/e2e"
+	"github.com/apache/yunikorn-k8shim/test/e2e/framework/configmanager"
 	"github.com/apache/yunikorn-k8shim/test/e2e/framework/helpers/common"
 	"github.com/apache/yunikorn-k8shim/test/e2e/framework/helpers/k8s"
 	"github.com/apache/yunikorn-k8shim/test/e2e/framework/helpers/yunikorn"
@@ -71,7 +72,7 @@ var _ = ginkgo.Describe("", func() {
 	ginkgo.It("Verify_Job_State", func() {
 		ginkgo.By("Verify that the job is scheduled & running by YuniKorn")
 		gomega.Ω(appsInfo.State).To(gomega.Equal("Running"))
-		gomega.Ω("yunikorn").To(gomega.Equal(sleepRespPod.Spec.SchedulerName))
+		gomega.Ω(configmanager.SchedulerName).To(gomega.Equal(sleepRespPod.Spec.SchedulerName))
 	})
 
 	ginkgo.It("Verify_Pod_Alloc_Props", func() {
@@ -112,7 +113,7 @@ var _ = ginkgo.Describe("", func() {
 		gomega.Ω(bestEffortPod.Status.QOSClass).To(gomega.Equal(v1.PodQOSBestEffort))
 
 		ginkgo.By("Verify that the pod's scheduler name is yunikorn")
-		gomega.Ω("yunikorn").To(gomega.Equal(bestEffortPod.Spec.SchedulerName))
+		gomega.Ω(configmanager.SchedulerName).To(gomega.Equal(bestEffortPod.Spec.SchedulerName))
 		allocation := appsInfo.Allocations[0]
 		gomega.Ω(allocation).NotTo(gomega.BeNil())
 		gomega.Ω(allocation.AllocationKey).NotTo(gomega.BeNil())
@@ -148,7 +149,7 @@ var _ = ginkgo.Describe("", func() {
 		gomega.Ω(burstablePod.Status.QOSClass).NotTo(gomega.Equal(v1.PodQOSBestEffort))
 
 		ginkgo.By("Verify that the pod's scheduler name is yunikorn")
-		gomega.Ω("yunikorn").To(gomega.Equal(burstablePod.Spec.SchedulerName))
+		gomega.Ω(configmanager.SchedulerName).To(gomega.Equal(burstablePod.Spec.SchedulerName))
 		allocation := appsInfo.Allocations[0]
 		gomega.Ω(allocation).NotTo(gomega.BeNil())
 		gomega.Ω(allocation.AllocationKey).NotTo(gomega.BeNil())
