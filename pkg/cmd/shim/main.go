@@ -62,7 +62,7 @@ func main() {
 		// metrics endpoint (see KubernetesShim.metricsServer); every other endpoint
 		// ceases to exist. We initialize the core logger explicitly because, unlike
 		// StartAllServicesWithLogger, StartAllServicesWithParams does not do it.
-		log.Log(log.Shim).Warn("exposeMetricsOnly enabled: serving only /ws/v1/metrics on :9080; " +
+		log.Log(log.Shim).Warn("exposeMetricsOnly enabled: serving only /metrics on :9080; " +
 			"all other REST endpoints are disabled, including /ws/v1/validate-conf - if the admission " +
 			"controller is deployed with config validation, it will fail open (admit configmaps unvalidated)")
 		corelog.InitializeLogger(log.RootLogger(), log.GetZapConfigs())

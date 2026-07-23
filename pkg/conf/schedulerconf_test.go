@@ -140,6 +140,10 @@ func TestParseConfigMap(t *testing.T) {
 		{CMSvcDisableGangScheduling, "DisableGangScheduling", true},
 		{CMSvcEnableConfigHotRefresh, "EnableConfigHotRefresh", false},
 		{CMSvcExposeMetricsOnly, "ExposeMetricsOnly", true},
+		// MetricsTLSEnabled cannot be set on its own (it requires cert+key); it is
+		// covered together with the paths in TestParseConfigMapMetricsTLS.
+		{CMSvcMetricsTLSCertFile, "MetricsTLSCertFile", "/etc/yunikorn/tls/tls.crt"},
+		{CMSvcMetricsTLSKeyFile, "MetricsTLSKeyFile", "/etc/yunikorn/tls/tls.key"},
 		{CMSvcPlaceholderImage, "PlaceHolderConfig.Image", "test-image"},
 		{CMSvcPlaceholderRunAsUser, "PlaceHolderConfig.RunAsUser", int64(1001)},
 		{CMSvcPlaceholderRunAsGroup, "PlaceHolderConfig.RunAsGroup", int64(1002)},
@@ -175,6 +179,8 @@ func TestUpdateConfigMapNonReloadable(t *testing.T) {
 		{CMSvcDispatchTimeout, "DispatchTimeout", 3 * time.Minute, false},
 		{CMSvcDisableGangScheduling, "DisableGangScheduling", true, false},
 		{CMSvcExposeMetricsOnly, "ExposeMetricsOnly", true, false},
+		{CMSvcMetricsTLSCertFile, "MetricsTLSCertFile", "/etc/yunikorn/tls/tls.crt", false},
+		{CMSvcMetricsTLSKeyFile, "MetricsTLSKeyFile", "/etc/yunikorn/tls/tls.key", false},
 		{CMSvcNodeInstanceTypeNodeLabelKey, "InstanceTypeNodeLabelKey", "node.kubernetes.io/instance-type", false},
 		{CMSvcPlaceholderImage, "PlaceHolderConfig.Image", "test-image", false},
 		{CMSvcPlaceholderRunAsUser, "PlaceHolderConfig.RunAsUser", int64(1001), false},
@@ -244,6 +250,40 @@ func TestParseConfigMapWithInvalidInt64(t *testing.T) {
 	assert.Assert(t, conf == nil, "Conf parsing failed")
 	assert.Equal(t, 1, len(errs), "1 Error for parsing invalid runAsUser")
 	assert.ErrorContains(t, errs[0], "invalid syntax", "wrong error type")
+}
+
+func TestParseConfigMapMetricsTLS(t *testing.T) {
+	// enabling TLS with both cert and key succeeds
+	conf, errs := parseConfig(map[string]string{
+		CMSvcMetricsTLSEnabled:  "true",
+		CMSvcMetricsTLSCertFile: "/etc/yunikorn/tls/tls.crt",
+		CMSvcMetricsTLSKeyFile:  "/etc/yunikorn/tls/tls.key",
+	}, CreateDefaultConfig())
+	assert.Assert(t, errs == nil, errs)
+	assert.Assert(t, conf != nil, "conf was nil")
+	assert.Equal(t, true, conf.MetricsTLSEnabled)
+	assert.Equal(t, "/etc/yunikorn/tls/tls.crt", conf.MetricsTLSCertFile)
+	assert.Equal(t, "/etc/yunikorn/tls/tls.key", conf.MetricsTLSKeyFile)
+
+	// leaving TLS disabled while cert/key are unset is fine
+	conf, errs = parseConfig(map[string]string{CMSvcMetricsTLSEnabled: "false"}, CreateDefaultConfig())
+	assert.Assert(t, errs == nil, errs)
+	assert.Assert(t, conf != nil, "conf was nil")
+	assert.Equal(t, false, conf.MetricsTLSEnabled)
+
+	// enabling TLS without cert and/or key is rejected
+	for name, cfg := range map[string]map[string]string{
+		"no cert or key": {CMSvcMetricsTLSEnabled: "true"},
+		"no key":         {CMSvcMetricsTLSEnabled: "true", CMSvcMetricsTLSCertFile: "/etc/yunikorn/tls/tls.crt"},
+		"no cert":        {CMSvcMetricsTLSEnabled: "true", CMSvcMetricsTLSKeyFile: "/etc/yunikorn/tls/tls.key"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			conf, errs := parseConfig(cfg, CreateDefaultConfig())
+			assert.Assert(t, conf == nil, "conf should be nil when TLS is misconfigured")
+			assert.Equal(t, 1, len(errs), "wrong error count")
+			assert.ErrorContains(t, errs[0], CMSvcMetricsTLSEnabled, "error should name the TLS enabled key")
+		})
+	}
 }
 
 // get a configuration value by field name
