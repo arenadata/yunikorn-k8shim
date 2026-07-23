@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - master
+      - 'ad/scheduler-*'
   workflow_dispatch: {}
 
 concurrency:
