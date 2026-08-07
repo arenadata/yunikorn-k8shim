@@ -30,6 +30,38 @@ By default, it handles all pods scheduling if pod's spec has field `schedulerNam
 
 For detailed information on how to build the overall scheduler please see the [build document](https://yunikorn.apache.org/docs/next/developer_guide/build) in the `yunikorn-site`.
 
+## REST API authentication and TLS
+
+The scheduler REST API (`:9080`, `/ws/v1/...`) is served by the shared webservice
+from `yunikorn-core`; all authentication, authorization and TLS settings are
+handled on the core side via `YUNIKORN_`-prefixed environment variables:
+
+- authentication mode (`mtls`, `shared_secret`, `ldap`, `kerberos`,
+	`kerberos_ldap`) — `YUNIKORN_AUTH_MODE` and the related `YUNIKORN_AUTH_*` /
+	`YUNIKORN_LDAP_*` / `YUNIKORN_KEYTAB_PATH` variables;
+- listener TLS — `YUNIKORN_TLS_CERT_FILE`, `YUNIKORN_TLS_KEY_FILE` and
+	optionally `YUNIKORN_TLS_CA_FILE` (the CA used to verify client certificates
+	in the `mtls` auth mode).
+
+When `yunikorn-web` fronts this API, its proxy authenticates with its own
+web -> k8shim leg: it attaches tokens signed with
+`YUNIKORN_K8SHIM_AUTH_SHARED_SECRET` (set on the web side), which this
+listener validates with `YUNIKORN_AUTH_MODE=shared_secret` and the same value
+in `YUNIKORN_AUTH_SHARED_SECRET`.
+
+See the `yunikorn-core` README and the comments in
+`yunikorn-core/pkg/webservice/auth.go` for the full variable list and mode
+descriptions. When the variables are not set the behaviour does not change —
+the API is served over HTTP without authentication.
+
+In the `service.exposeMetricsOnly` mode the shared webservice serves a single
+`/metrics` route. It is protected by the same authentication from the
+environment, which can be overridden for this endpoint with
+`YUNIKORN_METRICS_AUTH_MODE` (an auth mode, or `none` to disable) and
+`YUNIKORN_METRICS_AUTH_SHARED_SECRET` — for example to give Prometheus a
+dedicated scrape secret while the main API uses another mode. TLS for this
+mode is configured with the existing `service.metricsTls*` keys.
+
 ## K8s-shim component build
 This component build should only be used for development builds.
 Prerequisites and build environment setup is described in the above mentioned build document.
