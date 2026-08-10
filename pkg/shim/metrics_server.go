@@ -19,16 +19,14 @@
 package shim
 
 import (
-	ctx "context"
-	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
 	coremetrics "github.com/apache/yunikorn-core/pkg/metrics"
+	"github.com/apache/yunikorn-core/pkg/webservice"
 
 	"github.com/apache/yunikorn-k8shim/pkg/log"
 )
@@ -38,72 +36,58 @@ import (
 // /metrics).
 const metricsPort = 9080
 
-// newMetricsMux serves only /metrics; every other path returns 404. The handler
-// mirrors core's getMetrics: Collect() is the only thing that populates the
-// yunikorn_runtime_go_* families, so it must run before promhttp serves.
-//
-// pprof registers on http.DefaultServeMux via its init(); we never serve that mux, so
-// do NOT introduce a ListenAndServe(addr, nil) in this binary.
-func newMetricsMux() *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		coremetrics.GetRuntimeMetrics().Collect()
-		promhttp.Handler().ServeHTTP(w, r)
-	})
-	return mux
+// metricsServer is the metrics-only web server used when service.exposeMetricsOnly is
+// enabled: the shared core webservice server with a single /metrics route, so every
+// other path ceases to exist. Authentication comes from the webservice configuration;
+// the YUNIKORN_METRICS_AUTH_* variables override it for this endpoint (`none`
+// disables it). TLS comes from the service.metricsTls* configmap settings: when
+// certFile and keyFile are both set the server serves HTTPS.
+type metricsServer struct {
+	server *webservice.WebServer
 }
 
-// metricsServer is owned by KubernetesShim (started in Run, stopped in Stop) and only
-// created when service.exposeMetricsOnly is enabled. When certFile and keyFile are both
-// set the server serves HTTPS; otherwise it serves plaintext HTTP.
-type metricsServer struct {
-	server   *http.Server
-	certFile string
-	keyFile  string
+// metricsRoute mirrors core's getMetrics: Collect() is the only thing that populates
+// the yunikorn_runtime_go_* families, so it must run before promhttp serves.
+func metricsRoute() webservice.Route {
+	return webservice.Route{
+		Name:    webservice.RouteNameMetrics,
+		Method:  http.MethodGet,
+		Pattern: "/metrics",
+		HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+			coremetrics.GetRuntimeMetrics().Collect()
+			promhttp.Handler().ServeHTTP(w, r)
+		},
+	}
 }
 
 func newMetricsServer(port int, tlsEnabled bool, certFile, keyFile string) *metricsServer {
-	m := &metricsServer{
-		server: &http.Server{
-			Addr:              fmt.Sprintf(":%d", port),
-			Handler:           newMetricsMux(),
-			ReadHeaderTimeout: 10 * time.Second,
-		},
+	cfg, err := webservice.LoadConfig()
+	if err != nil {
+		log.Log(log.Shim).Error("unable to load webservice configuration", zap.Error(err))
 	}
-	// TLS is only used when explicitly enabled and both cert and key paths are provided;
-	// anything short of that falls back to plaintext to stay backward compatible.
-	if tlsEnabled && certFile != "" && keyFile != "" {
-		m.certFile = certFile
-		m.keyFile = keyFile
+	// apply the /metrics authentication override, if any
+	cfg = cfg.MetricsConfig()
+	if cfg != nil {
+		// the metrics listener TLS is driven by the configmap, not the environment;
+		// TLS is only used when explicitly enabled and both cert and key paths are
+		// provided, anything short of that falls back to plaintext to stay backward
+		// compatible
+		cfg.TLS = nil
+		if tlsEnabled && certFile != "" && keyFile != "" {
+			cfg.TLS = &webservice.TLSConfig{CertFile: certFile, KeyFile: keyFile}
+		}
 	}
-	return m
+	return &metricsServer{
+		server: webservice.NewWebServer(cfg, fmt.Sprintf(":%d", port), []webservice.Route{metricsRoute()}),
+	}
 }
 
 func (m *metricsServer) start() {
-	tlsEnabled := m.certFile != "" && m.keyFile != ""
-	scheme := "http"
-	if tlsEnabled {
-		scheme = "https"
-	}
-	log.Log(log.Shim).Info("metrics-only web server started",
-		zap.String("addr", m.server.Addr), zap.String("scheme", scheme))
-	go func() {
-		var err error
-		if tlsEnabled {
-			err = m.server.ListenAndServeTLS(m.certFile, m.keyFile)
-		} else {
-			err = m.server.ListenAndServe()
-		}
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Log(log.Shim).Error("metrics server error", zap.Error(err))
-		}
-	}()
+	m.server.Start()
 }
 
 func (m *metricsServer) stop() {
-	c, cancel := ctx.WithTimeout(ctx.Background(), 5*time.Second)
-	defer cancel()
-	if err := m.server.Shutdown(c); err != nil {
+	if err := m.server.Stop(); err != nil {
 		log.Log(log.Shim).Warn("metrics server shutdown error", zap.Error(err))
 	}
 }

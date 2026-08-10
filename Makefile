@@ -26,7 +26,7 @@
 .PHONY: lint check_scripts license-check go-license-check pseudo
 # e2e test targets
 .PHONY: print_kubectl_version print_kind_version print_helm_version
-.PHONY: e2e_test kind-e2e start-cluster stop-cluster
+.PHONY: e2e_test e2e_metrics_auth_test kind-e2e start-cluster stop-cluster
 
 # Go compiler selection
 ifeq ($(GO),)
@@ -642,4 +642,9 @@ kind-e2e: $(KIND_BIN)
 e2e_test: tools
 	@echo "running e2e tests"
 	cd ./test/e2e && \
-	ginkgo -r $(E2E_TEST) -v -keep-going -- -yk-namespace "yunikorn" -kube-config $(KUBECONFIG)
+	ginkgo -r --skip-package=metrics_auth $(E2E_TEST) -v -keep-going -- -yk-namespace "yunikorn" -kube-config $(KUBECONFIG)
+
+# Run the /metrics authentication e2e tests (requires Docker, no cluster needed)
+e2e_metrics_auth_test:
+	@echo "running /metrics authentication e2e tests"
+	cd ./test/e2e/metrics_auth && "$(GO)" test -count=1 ./...
