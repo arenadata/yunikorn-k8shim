@@ -642,7 +642,7 @@ kind-e2e: $(KIND_BIN)
 e2e_test: tools
 	@echo "running e2e tests"
 	cd ./test/e2e && \
-	ginkgo -r $(E2E_TEST) -v -keep-going -- -yk-namespace "yunikorn" -kube-config $(KUBECONFIG)
+	ginkgo -r --skip-package=metrics_auth $(E2E_TEST) -v -keep-going -- -yk-namespace "yunikorn" -kube-config $(KUBECONFIG)
 
 # Run the /metrics authentication e2e tests (requires Docker, no cluster needed)
 e2e_metrics_auth_test:
