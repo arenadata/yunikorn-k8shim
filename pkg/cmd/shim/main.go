@@ -109,15 +109,20 @@ func localServer(ctx context.Context) error {
 		router.Handler(rt.Method, rt.Pattern, rt.HandlerFunc)
 	}
 
-	_ = os.Remove(socketPath)
+	socketFilePath := os.Getenv("YUNIKORN_K8SHIM_SOCKET_PATH")
+	if len(socketFilePath) == 0 {
+		socketFilePath = socketPath
+	}
 
-	listener, err := net.Listen("unix", socketPath)
+	_ = os.Remove(socketFilePath)
+
+	listener, err := net.Listen("unix", socketFilePath)
 	if err != nil {
-		return fmt.Errorf("unable to listen on socket %s: %w", socketPath, err)
+		return fmt.Errorf("unable to listen on socket %s: %w", socketFilePath, err)
 	}
 	defer func() { _ = listener.Close() }()
 
-	if err = os.Chmod(socketPath, 0660); err != nil {
+	if err = os.Chmod(socketFilePath, 0660); err != nil {
 		_ = listener.Close()
 		return fmt.Errorf("failed to set socket permissions: %w", err)
 	}
@@ -139,7 +144,7 @@ func localServer(ctx context.Context) error {
 		if err := srv.Shutdown(shutdownCtx); err != nil {
 			log.Log(log.Shim).Error("Error shutting down metrics server", zap.Error(err))
 		}
-		_ = os.Remove(socketPath)
+		_ = os.Remove(socketFilePath)
 	}()
 
 	return srv.Serve(listener)
