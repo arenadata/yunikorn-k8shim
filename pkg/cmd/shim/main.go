@@ -114,6 +114,7 @@ func localServer(ctx context.Context) error {
 		socketFilePath = socketPath
 	}
 
+	//nolint:gosec
 	_ = os.Remove(socketFilePath)
 
 	listener, err := net.Listen("unix", socketFilePath)
@@ -122,6 +123,7 @@ func localServer(ctx context.Context) error {
 	}
 	defer func() { _ = listener.Close() }()
 
+	//nolint:gosec
 	if err = os.Chmod(socketFilePath, 0660); err != nil {
 		_ = listener.Close()
 		return fmt.Errorf("failed to set socket permissions: %w", err)
