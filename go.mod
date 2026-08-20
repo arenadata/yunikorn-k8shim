@@ -25,6 +25,7 @@ require (
 	github.com/apache/yunikorn-scheduler-interface v1.9.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/looplab/fsm v1.0.3
 	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/onsi/gomega v1.40.0
@@ -79,7 +80,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/julienschmidt/httprouter v1.3.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/moby/spdystream v0.5.1 // indirect
@@ -175,4 +175,4 @@ replace (
 	k8s.io/utils => k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 )
 
-replace github.com/apache/yunikorn-core => github.com/arenadata/yunikorn-core v1.9.1-0.20260807135404-7dc590f0be55
+replace github.com/apache/yunikorn-core => github.com/arenadata/yunikorn-core v1.9.1-0.20260820130534-7deee5a36d9a

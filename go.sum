@@ -12,8 +12,8 @@ github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8
 github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
 github.com/apache/yunikorn-scheduler-interface v1.9.0 h1:QHlmncBjNujUQUOss0bufKxvC4cdETiVKtpLkLN3atw=
 github.com/apache/yunikorn-scheduler-interface v1.9.0/go.mod h1:XygReHrRd3TtfNS3uVtRQI0sCOfprcLUfhlmv/LdCmk=
-github.com/arenadata/yunikorn-core v1.9.1-0.20260807135404-7dc590f0be55 h1:Q5xEcm7mpNJ5NxEC81KTpdw5garCHQdconMmBgZNyxE=
-github.com/arenadata/yunikorn-core v1.9.1-0.20260807135404-7dc590f0be55/go.mod h1:ra6QiG4QownPPRdJJTv+kN62/ub5+sbCAhrx9uFxZ4o=
+github.com/arenadata/yunikorn-core v1.9.1-0.20260820130534-7deee5a36d9a h1:6YUGq4U18K8t9klCx1yyNiVJBK2lTdKgoLsKbyMtWAg=
+github.com/arenadata/yunikorn-core v1.9.1-0.20260820130534-7deee5a36d9a/go.mod h1:ra6QiG4QownPPRdJJTv+kN62/ub5+sbCAhrx9uFxZ4o=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
