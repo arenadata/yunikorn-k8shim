@@ -20,6 +20,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -82,7 +83,7 @@ func main() {
 		serviceContext = entrypoint.StartAllServicesWithParams(false, false)
 
 		go func() {
-			if err = localServer(ctx); err != nil {
+			if err = localServer(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Log(log.Shim).Fatal("Unable to start server", zap.Error(err))
 			}
 		}()
