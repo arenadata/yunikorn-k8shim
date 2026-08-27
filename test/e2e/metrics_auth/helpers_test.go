@@ -69,10 +69,8 @@ func loadConfig(t *testing.T, env map[string]string) *webservice.Config {
 }
 
 // ldapEnv is the YUNIKORN_LDAP_* connection block shared by the LDAP-backed
-// tests. The directory does not maintain a memberOf attribute, so group
-// membership resolves through the group entry search (member=<dn>), which
-// yields the plain cn group names the YUNIKORN_LDAP_*_GROUPS role sets are
-// matched against.
+// tests. Which group resolution path a test exercises depends on the directory
+// it is pointed at, not on anything here.
 func ldapEnv(l *ldapServer) map[string]string {
 	return map[string]string{
 		"YUNIKORN_LDAP_URL":           l.URL,

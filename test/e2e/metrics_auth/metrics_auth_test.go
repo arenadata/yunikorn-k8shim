@@ -170,6 +170,59 @@ func TestShimMetricsLDAP(t *testing.T) {
 	})
 }
 
+// TestShimMetricsLDAPMemberOf: the same role based authorization as
+// TestShimMetricsLDAP, but against a directory that populates memberOf, so
+// group membership resolves to DNs rather than through the group entry
+// search. Configured group names stay short - that is the contract this pins.
+func TestShimMetricsLDAPMemberOf(t *testing.T) {
+	l := startLDAPMemberOfContainer(t)
+	roleEnv := map[string]string{
+		"YUNIKORN_METRICS_AUTH_MODE": "ldap",
+		// in the ldap mode the shared secret signs the YK_AUTH cookie
+		"YUNIKORN_METRICS_AUTH_SHARED_SECRET": "metrics-cookie-secret",
+		// YUNIKORN_LDAP_GROUP_ATTRIBUTE is left unset so the memberOf default
+		// applies; loadConfig clears every YUNIKORN_* first
+		"YUNIKORN_LDAP_ADMIN_GROUPS":   "yk-admins",
+		"YUNIKORN_LDAP_VIEWER_GROUPS":  "yk-viewers",
+		"YUNIKORN_LDAP_SERVICE_GROUPS": "yk-service",
+	}
+	base := startShimMetricsServer(t, mergeEnv(ldapEnv(l), roleEnv), false, "", "")
+
+	t.Run("service role scrapes metrics", func(t *testing.T) {
+		resp := doGet(t, http.DefaultClient, base+"/metrics", withBasic("svc1", "svc1pw"))
+		assert.Equal(t, resp.StatusCode, http.StatusOK)
+		assertPrometheusPayload(t, resp)
+	})
+
+	t.Run("admin role is allowed", func(t *testing.T) {
+		resp := doGet(t, http.DefaultClient, base+"/metrics", withBasic("admin1", "admin1pw"))
+		assert.Equal(t, resp.StatusCode, http.StatusOK)
+	})
+
+	t.Run("viewer role is forbidden", func(t *testing.T) {
+		resp := doGet(t, http.DefaultClient, base+"/metrics", withBasic("viewer1", "viewer1pw"))
+		assert.Equal(t, resp.StatusCode, http.StatusForbidden)
+	})
+
+	t.Run("wrong password rejected", func(t *testing.T) {
+		resp := doGet(t, http.DefaultClient, base+"/metrics", withBasic("svc1", "wrong"))
+		assert.Equal(t, resp.StatusCode, http.StatusUnauthorized)
+	})
+
+	// Two independent reasons the DN below cannot match: GroupSet.UnmarshalText
+	// splits the role lists on ",", and normalizeLDAPGroupNames keeps only the
+	// leading RDN value. Only meaningful next to the subtests above, which prove
+	// group resolution works on this directory - split out on its own this would
+	// pass on a broken bootstrap.
+	t.Run("group DN cannot be configured as a role", func(t *testing.T) {
+		dnBase := startShimMetricsServer(t, mergeEnv(ldapEnv(l), roleEnv, map[string]string{
+			"YUNIKORN_LDAP_ADMIN_GROUPS": "cn=yk-admins,ou=groups," + ldapBaseDN,
+		}), false, "", "")
+		resp := doGet(t, http.DefaultClient, dnBase+"/metrics", withBasic("admin1", "admin1pw"))
+		assert.Equal(t, resp.StatusCode, http.StatusForbidden)
+	})
+}
+
 // TestShimMetricsKerberos: METRICS_AUTH_MODE=kerberos protects the endpoint
 // with SPNEGO against the shim keytab.
 func TestShimMetricsKerberos(t *testing.T) {
