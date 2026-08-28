@@ -60,3 +60,19 @@ jobs:
         with:
           name: ${{ github.job }} stdout (${{ matrix.k8s }})
           path: build/e2e
+
+  metrics-auth-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: .go_version
+          check-latest: true
+      - name: Metrics auth e2e tests
+        run: make e2e_metrics_auth_test

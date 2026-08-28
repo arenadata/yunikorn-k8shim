@@ -32,7 +32,10 @@ Kubernetes cluster.
 
 External dependencies run in testcontainers:
 
-- **OpenLDAP** (`osixia/openldap`), seeded from `testdata/ldap/seed.ldif`
+- **OpenLDAP** (`osixia/openldap`) ×2, both seeded from `testdata/ldap/seed.ldif`:
+  one plain, one with the `memberof` overlay (`testdata/ldap/memberof.ldif`).
+  The group entry search runs only when the group attribute yields nothing, so
+  a single directory can cover only one of the two paths.
 - **MIT Kerberos KDC**, built from `testdata/kdc/`
 
 ## Running
@@ -55,6 +58,7 @@ The LDAP and KDC containers start once per `go test` run, on first use.
 | inherited `shared_secret` | missing/foreign/expired/valid tokens against the main shim secret |
 | `YUNIKORN_METRICS_AUTH_*` overrides | `none` disables auth for metrics only; a dedicated metrics secret replaces the main one |
 | `ldap` | scraper BasicAuth against the directory; service and admin roles reach `/metrics`, viewer is 403, wrong password is 401 |
+| `ldap` + `memberOf` | the same four outcomes against the overlay directory, where membership resolves to DNs; also pins that a group DN cannot be configured as a role |
 | `kerberos` | SPNEGO-protected scrape against the shim keytab |
 | TLS | listener TLS comes from the `service.metricsTls*` settings; `YUNIKORN_TLS_*` is ignored for this listener |
 | `mtls` limitation | documented: the metrics listener has no configurable client CA pool, so mtls rejects every scraper |

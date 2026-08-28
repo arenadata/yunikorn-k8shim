@@ -175,4 +175,4 @@ replace (
 	k8s.io/utils => k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 )
 
-replace github.com/apache/yunikorn-core => github.com/arenadata/yunikorn-core v1.9.1-0.20260820130534-7deee5a36d9a
+replace github.com/apache/yunikorn-core => github.com/arenadata/yunikorn-core v1.9.1-0.20260828062855-812efb37eb4a
