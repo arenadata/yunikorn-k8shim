@@ -63,7 +63,10 @@ func metricsRoute() webservice.Route {
 func newMetricsServer(port int, tlsEnabled bool, certFile, keyFile string) *metricsServer {
 	cfg, err := webservice.LoadConfig()
 	if err != nil {
-		log.Log(log.Shim).Error("unable to load webservice configuration", zap.Error(err))
+		// serving without the configured authentication would open /metrics, so
+		// the listener stays closed instead, as core does for its REST API
+		log.Log(log.Shim).Error("unable to load webservice configuration, metrics server not started", zap.Error(err))
+		return nil
 	}
 	// apply the /metrics authentication override, if any
 	cfg = cfg.MetricsConfig()
